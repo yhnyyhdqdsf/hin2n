@@ -1,0 +1,73 @@
+language: android
+
+jdk:
+    - oraclejdk8
+
+os:
+    linux
+
+android:
+    components:
+        - tools
+        - platform-tools
+        - build-tools-28.0.3
+        - android-28
+
+before_cache:
+    - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+    - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+cache:
+    directories:
+        - "$HOME/.gradle/caches/"
+        - "$HOME/.gradle/wrapper/"
+        - "$HOME/.android/build-cache"
+
+install:
+    - echo y | sdkmanager "ndk-bundle"
+    - echo y | sdkmanager "cmake;3.6.4111459"
+    - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
+
+before_script:
+    - cd Hin2n_android
+    - chmod +x gradlew
+    - git submodule init
+    - git submodule sync
+    - git submodule update
+    - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then openssl aes-256-cbc -K $encrypted_13aef818f0d2_key -iv $encrypted_13aef818f0d2_iv -in app/Hin2n.jks.enc -out app/Hin2n.jks -d; fi'
+
+script:
+    - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then ./gradlew assembleDebug; fi'
+    - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then ./gradlew assembleRelease; fi'
+
+deploy:
+    provider: releases
+    api_key:
+        secure: S7RNC8+pQ39/+9L4Ea7uoD2mM8VnFGuftaVyTOI65aX6rkEc8pM1B+Offl9Fgq18FoMy4CffrnXK1XY+bVI3bcgbQzAmtzMrvALvOb2N01dGPMDsgcmCWtmWUbmv7T1BqBuuf/a74k/l8m0WCAs48jO+E9UdTocPLTrKZrRVC1HtJ3t2aFm9A6WvXY9/uGqmtCUAUZHWkVAn+JLrsL5A8xRu16L1Ql2bZMGY9Nie2ixGYA7lOleo14vYbRqBkBPO2CNeUkmN8wCc1xyzCNbLtLgVhZbSA+IVzBZ3ZMKWbAI/s6+ZhE6kgGGMVRZ2urZRHgp4XPWowlGKdrF7HVPDK8kfDy/yaw0i1OuzYZbKx9wDU8rDy32eFAE4JRS2xkqAw5wjhpzuplL0agU6MkujeNR3VMTLSwJfbrZvIHnWdxhLCD1804P5vaOkQaY9JyQBk4+5PEUCPXEE7LTODvWuKRDa/CNb5t9f3VlxlNmnCV2DnM88BQpCx6fXP/xhpdhNu93T0SgBwNEZ0ta7s3BvKYg2ohhFeWLLx4kfNkzjbrYQFFI8KgCPjSbFbvAP62gxSKn8IsgK8zVZZDzfrBJ5CPIfwms462e/UK37iozMwwAFKcoFDlnD6K8xFvK8csnQ+jsUEFVbFg1w+0tqwzZm+pBKiJHuAw6q8Agr6na7Bdk=
+    file_glob: true
+    file: app/build/outputs/apk/*/release/*.apk
+    skip_cleanup: true
+    on:
+        repo: switch-iot/hin2n
+        tags: true
+        all_branches: true
+
+env:
+    global:
+        # HIN2N_KSTOREPWD
+        - secure: iOkHa0yGhQWanR/EOEEqyeVVT08QWyNZf9Z7L9T9qBOMpJp92MdBAQkQnbMmA0hZ549OKM68Zfyea0u3cMN9g1vdw7kKEb/ZyaLFtj+YPodz7Aeos6Fb2PsflQdVayt3ROcwBi/GpL2WuYrZGyFLfJv2a6qyR1GYrsmgGBioH5W+0nszVpBhNW78SWvJE5H571Fpuud2swb6u0lg3flAQ60SywpSZhDpUJ5rRfTe98muLs6eyJYXsBgRVPfOqODRqt3ef+yO4U+QI7pCAKuC8bUzSEuZGyB74V8KQxyh+eiBZo2LfH2V4cVDDVfCW5kMjgt5VRFt78Go5YxTyIpFPXAfMJZmFE1jk+D85+Ip8Co1nIKesiwTNhCFOvWVzEJd/W0QnOJPPDpqWzNdoIBG1M39v2AVs9qKgXaGRjECPgB/fs1YnNBPL8tS7Aj20mMzsSt7w4lpPB1es5NUYYjM1vnnPvBWlZ2n8CtDgL3xWIkkZcYPOP8q3dbwYWVho2w/fsBoWBID4m/hhA3+wE6myPo5WUlZxbkYWhNN4tWaO0L882JuBk2Tp454kC6ZoKDliBpNT3RIAX+AuHujo5MVxJOycGlLLtFlahHTtuO71940tP6WYu/cAXh9Lx5yrfZ9qUyNscfdXZlOuViuNAW/+nvoOJ6/hGJKPzTKXK8vSfI=
+        # HIN2N_KEYPWD
+        - secure: UfYk4hqnM9aSEMbGlbL44sDq3hbL5pW5x/fvAnl1hjgjdOmfk8M9vx3F9ehaW3uP/qwYH/fbVs/cjdFQg6d283fqFipapJiRSg0UCyqbQVMWmyRBCxkGH+ioMV/cZndN6IQWqDzYSVnfmu2gs1cq4gCbcqV/bfQYIU0m41AyeMAIYJG0hDAVBPEINny+/9oyErFjssIQHxsJZuZW5pMHHCzt9uRjcuaTyDV83Ran1g3Xyt2qNxyHjPn7kieTc/aLaAzvsQdm5Mbgelhv0ohFWmAeVoczy+V2VKOocXY26TCQmWWHn+C0m26jt+wEVA7GSR5KtmlvusRpbKLn/Hr5kJg4UtUjz8i4gyKzm1DnIEr1StzSSUuPojLgiEGjJPS0co52Qfp9w4RfkYsrAd4+MrP1rc6Ni8MEwvKFHsEXgy9eN43nlYP7olPQswPItS1Cv40g4tfRc0j0FF95Yl990GLL4W9X3Fe+Oa3DTXCsCgi9X2zAoqiR0D0CYDhDvwEiM6OeDoy0ft1/bcSBodtWW7DOF6w2o9DH2jtMUC9QUJLI36xwPVvt0HOpn5imeXRq4JV3e4JAE2ZrTbQI6SG14+EfD19Ox1W7ckxvwS2ZlEhG73JGUd8pBzra609oXSw3UYyOskPSzGZ+aGtViba+hJw2gn3AZ1nEWE9EK6E/UL4=
+        # UMENG_APPKEY
+        - secure: MHHjXcPbunWdzaWE3ZssDm+bNfkGkKbEi1YKNVN/fVUCpmAkYQ/xSiUfzPvwL/lkf119Lx6L7vdYfkuN8NRYYWabOkY7mzAenPGB44MvQLMnJ4+u+XMoQ7AlFunGtkVpSJUmFuth81m5xrtPrGZZyT9EVx7BN7Cxm+vf5gYGU1G9G0N8rLIK1r7DefZg01SM7rGGZX2lfTYLZpOrg/cOrmPHS+2+tGKC1yA2exxRQedOhf7BUJtJNDAzL1JlLP5UvxoBXYaFJKeok0GyutpnVWaJ0ROShyMUmfrioxM2ULJfETCHHBR7v9ufkdhjLGI1hFoYCRqrHd4QdCg9oTZNcaaXdfn4gkYbuj+i5FlGIK2iC8p5M0PS4q5Ngcioq35uYTBF1ZRZGoPDhDOrmgud1cFEbZxnJxM2cm3gQiwY/yA19BaU2F98qQYvfhG0ONsn3ommUlSujZOdaWG5G8pIec6PmQEXHOAgzvrBMq7jlx0fGLpeETRsc3b2Iko6bdG305S86Epu3/tRPRUJv8poBHX1wYD++zGOiYI+D2F530S51YroEne437wwyN3acAD1qH6tfSPmVVbzs6l+/N0JKu61s2djCN4Mk2La5MZUtKq9py0nRRaHfuCvXJ7s5sXeRzYVKsVDS3UcxlH6fa/h7tr0Bfahag1xjDvwxcVJzQc=
+        # BUGLY_APPID
+        - secure: F6aWlzMBV8yLZIXfIBs22WiKAEF4hmLXAtIbYfT6dgC284dIyH7zb67sHHseK30t9XildVJT7S1cBZrvPYgDsmN/fefD3zW5CiYp5rmpEvklQDDehb7RFzCZnUxFLzycAwjsO6Ruze1Bk36zLdgJ+D6ayDpL4E9Q098yFdQBOPVQU0HHQOat5XMUPOxh4CV+Xh9RE0fD1IQcDlsieQeU8kq/CCmPhNPEtZYuTxL8mCmMf59TiLMLnlIl1MJXfgIlrvuLOwumWirqcSQ3/GS7I0u8ZV8Er1O7zUW/XcfL08p6cGoBOKqjzdi7anJU4CdoBrB7uA/feAWqp2oA6LziBdG6/+EPhVSRE13E4clEyfktv5JE2Oe/UcB48Q6859eSzArSYAyDsSn5PWjI82fFWlsfnB1NZuktNao47XcUvdD2ZpaywZ4ABmmm3rHy6LYy0L4KtNttQPhqmBih0pQf3Gl3fm8oZyJvWhP6ANoc8tBCG7Vl9gkM3HAe+KJhORgRxUFlDmL47gRQUwKqR8gmM54uPjHlT6YPUxOb96Zm42Vml4mA98bKGhqwQbMWeNBfQckf7JUgDJhB1oc9O096HitVDSKDEsuLcTDVwcfRXu8ZzxHgEC7PZzvytJ1ky5/v5JyxBpt6uGhEJHmUYyZI5eA0wm6mFOJtHOwcJZDhX0U=
+        # SHARE_WX_APPID
+        - secure: uVKayK55wlnZwlnAUBu7Vbkx7IcxKujuqDNJlSRtwgqNV+dURQUezv+wP5h273w8rFL00rUq825xmMlnr0yt+nnoNOdWYhbW14HgiP8QS0xZnuOdJnB3OqqxlFXNt2/vFYbmWz+T97F85eAbXZPwK7dMaimWCBWdLkCgk0v2jyw3n0Bt1Satd8oCDG7YPqd1Ip9OFwbdQ6cOYTTV4vZQXiVaHu31wkqjMWu9Gl73peB8ZdcQY1uN+Zh1ko0tfKEWubTE+TsbZunMU3gjHf4Al4KuLi92ptXM5okXTEwgOVOUam4BF6TmGrYT0qrdiHkeUCQaRYWovLTlr+lMI6UafEGfTmsQfUCN3mF/7nH6VAQ3URiEeUQ1db7Tky2+2JE14iUH96BRUwmNwpQ4l018FHmWsE+QY6Y3sFr7E2ftvCzTqKNA2asTlQIDh0w7e7xQsuU80Xebrc71dpH2R9XPVL0KBfZqpSeElfhepBeizW3F5ZqC4oGQALcvhGzEH6lQIP6LaNnB/0erycdsRerZelFtZs6ehen1YRtHAJ3cPsTqTjjjN8MCF8I8omB7/NcdMYqIS34cR70Wyv+NzXmOSk42JMtJOrAcOA08jNf1Qg95qjjLcIDXzPgvrWEJmzEQdtVVQm5Hc++8Fl0ucT0NameWuj6PMtC/+33ZjaGkhXQ=
+        # SHARE_WX_APPSECRET
+        - secure: cXaxqbFBrWjVbEDJIxCJzy6rpe2/tMCK5HFHfoXwoKVDVFc6WTDOOl3frv2w6vlA4LpOtUr4CcZ+17POjvrfz48MMiAYvN9oXLAmGyV5bUcCOCzjBrZAN1VtVHTqJiNBT++Xnl37UyTDAKH0wZuGhrdjlGhflXAGycTPP2t4QvD3q6UZP/wN6ORFQ+/Guq85N5GEhHBPv+V07z6HZWgVTyAMm6SUYvFJIlhzmQvjJK5K+2cBi1yDZT1V8QA1LOYLdcwia2O+/9YpTraJzsjtXcCEy65B+H90wwoWZ1OmhGJIXiXbdwKgYql2W0yLgF6V1gCRYE19L5PA6gjyy9ROAbEEurSeSKNvVyvoSkWYZ39oS8jRiQ77VSWh5Mxa6jAIWQblogAtZhOKy/b5AHsbpbsx/SeetC0W4chknt/yxweRBgqU5vuKrGmiFQ9ylLuWFOpYWuWTWpeBkep5EK9lB3ddV9LGpMu+/OiH+hj4owA3EATQ+LmChisNU8xrPKPqZjIViAdK+O6lNYjLMp2uRtTDoT+Cp+L1f1LGXG2cgvcZF9cPDky97VDr3D6IZP+0oF5rs7f4DPK8NLAu/fAsVbj6Ss6lD2VE7sVBPQKix0YC6Y33oJ4PB7BuPjYskn+pp8lKrAu7QHIm3YLxBZ3GALUs85Echh51QKJHIf40Jbc=
+        # SHARE_WB_APPID
+        - secure: G8nPn1wxwgZVPKJJPm5zWh+1+Q4F/yBYUqJArmP8Ag1+TzYTWm/rLhoy2LczJpjHmI+5wR30+2NzlMfCDqBU/5s/qbALqIv5w50lW65W+KOn5TCxr/XWP2fmbVqXtTsDhvd9KjjPSBLfetKOCeHdbDKA++ebeXRQlo4jegw2m0mb7ZkuDFx0m+anpgmZYhU2Z77VcIeJcYSDUC9Rdqh2r4ZXoL2HlD4Wovy7XmL7NVZ/veuvoIeliGVTxTDRhmR8P3hmTJhI9Yf+DL2CFPSqO1/qua426n/iwYO90cwO+s2jkZ6RxD6z/wG7ysU5rEAaUXDRoHUZGd1CCqBEh1I1wg+mQHooS7FVXPazj2O2LJVXqG8aKKfoo2i3niNvs3vLEEhyITKfk5LXJeNNDktWxaFITMUhlk1lNtrqXYusCveD16eWBhNOYIXWTBl1oFg0EwAtvjyRZRLnGzc5ntHb6Xd6/hPhkNPBT8wZQxJQvS1iTc+U/nT21ZaKNDumIeRJrkOLD1yoPjlbf7XIRym5emzF1iloM/abkw0C2Ag8ctGHM5il3h1WbaCddYTAx2LEiRCEkAAjt7mOKj314gLHbIHH1YB8+jABg52DXEKkvMz4p9l9INxL9A65mblgHyOvtPBEkO9kTN2ALKh49twlgk27l7/Dcedvgtky5B7oXNE=
+        # SHARE_WB_APPSECRET
+        - secure: cPprARKn13Sjrb8Li39CxMK/YCrKzO6ysVb3WJMGpldp3ebJTSKtycnwXB2/cXOHDjtwrfU5WgDiVxdNJQyG+lzKtJnMjOvfo0T3pVl54lRixQYuvK1eSxqbAM++w35eIEJX+xLAXd6ZsO4Z/e2cEUuNlvLDQny+NEmrHwnM5Iz7yfLWC+SSu7tH8zIlxRDTd94yT5VvcEj8zyZZ5i1nsdUE4CzJWHpylHVMUnHVJ6n2s1pCS3PDg/+4VIJ/UhpOTPaX5UsQYLY9MXeV3oFEy+1NLHE7OEqGzynlJwWn9i//O4FxzfYV5tnE/c2nGlNBwVAXMaxATArp1nnKrvfzEL3RxYDB+MIcXbpqbsf2SgS0PZhAy3r3t78QoVjX90LB53edTAxFimOznNX7kSryZio/zJaqmcFChtyJ0kFmOnRPlQadZmq5fCE1VlVSvX5++Kf5kc7elOjn75w+DInuqh7VpfQRpNLo4ItFkiX9pJPqQrwKQVFVXiMZvZTp4622FCaia8eDzUiogH/iAqu5u14SPD2dWNpx/v9DUf9IyBYRESCzCL3bSlUke9+aQ9GNs0E6km20+3P6p/fY9eGSeoBOh10OfFAuU3F9zkMqMEzSn/JLnAve/PicZ94mDGE+nkbxeGOzU62taDLqbjLWLikgLEDcRwO+KbEpxO2sQXc=
+
